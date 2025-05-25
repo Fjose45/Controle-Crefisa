@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Financiamentos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @media (max-width: 768px) {
+            .mobile-stack {
+                flex-direction: column;
+            }
+            .mobile-w-full {
+                width: 100% !important;
+            }
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .input-error {
+            border-color: #f87171;
+        }
+        .error-message {
+            color: #f87171;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        body {
+            background-image: url('https://images.unsplash.com/photo-1601597111158-2fceff292cdc?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80');
+            background-size: cover;
+            background-attachment: fixed;
+            background-position: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .container {
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin: 2rem auto;
+            padding: 2rem;
+            max-width: 1200px;
+        }
+        .bg-financial {
+            background-color: rgba(41, 128, 185, 0.9);
+        }
+        .bg-financial-light {
+            background-color: rgba(52, 152, 219, 0.9);
+        }
+        .total-row {
+            background-color: #f0f9ff;
+            font-weight: bold;
+        }
+        button {
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center text-blue-800 mb-8">Sistema de Financiamentos</h1>
+        
+        <!-- Date Filter -->
+        <div class="bg-financial-light rounded-lg shadow-md p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4 text-white">Filtrar por Período</h2>
+            <div class="flex mobile-stack gap-4">
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-white mb-1">Data Inicial</label>
+                    <input type="date" id="startDate" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-white mb-1">Data Final</label>
+                    <input type="date" id="endDate" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex items-end gap-2">
+                    <button id="filterBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md w-full mobile-w-full">
+                        <i class="fas fa-filter mr-2"></i>Filtrar
+                    </button>
+                    <button id="clearBtn" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md w-full mobile-w-full">
+                        <i class="fas fa-broom mr-2"></i>Limpar
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tabs -->
+        <div class="mb-6">
+            <div class="flex border-b border-gray-200">
+                <button class="tab-btn py-2 px-4 font-medium text-gray-600 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 active" data-tab="financing">
+                    <i class="fas fa-file-invoice-dollar mr-2"></i>Financiamentos
+                </button>
+                <button class="tab-btn py-2 px-4 font-medium text-gray-600 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600" data-tab="consultants">
+                    <i class="fas fa-user-tie mr-2"></i>Consultores
+                </button>
+            </div>
+        </div>
+        
+        <!-- Financing Tab -->
+        <div id="financing" class="tab-content active">
+            <!-- Add Financing Form -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">Cadastrar Novo Financiamento</h2>
+                <form id="financingForm" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label for="date" class="block text-sm font-medium text-gray-700 mb-1">Data*</label>
+                            <input type="date" id="date" name="date" required class="w-full p-2 border border-gray-300 rounded-md">
+                            <div id="date-error" class="error-message"></div>
+                        </div>
+                        <div>
+                            <label for="consultant" class="block text-sm font-medium text-gray-700 mb-1">Consultor*</label>
+                            <input type="text" id="consultant" name="consultant" required class="w-full p-2 border border-gray-300 rounded-md">
+                            <div id="consultant-error" class="error-message"></div>
+                        </div>
+                        <div>
+                            <label for="clientName" class="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente*</label>
+                            <input type="text" id="clientName" name="clientName" required class="w-full p-2 border border-gray-300 rounded-md">
+                            <div id="clientName-error" class="error-message"></div>
+                        </div>
+                        <div>
+                            <label for="cpf" class="block text-sm font-medium text-gray-700 mb-1">CPF*</label>
+                            <input type="text" id="cpf" name="cpf" required class="w-full p-2 border border-gray-300 rounded-md" placeholder="000.000.000-00">
+                            <div id="cpf-error" class="error-message"></div>
+                        </div>
+                        <div>
+                            <label for="value" class="block text-sm font-medium text-gray-700 mb-1">Valor (R$)*</label>
+                            <input type="number" id="value" name="value" step="0.01" min="0" required class="w-full p-2 border border-gray-300 rounded-md">
+                            <div id="value-error" class="error-message"></div>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button type="reset" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-times mr-2"></i>Cancelar
+                        </button>
+                        <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md">
+                            <i class="fas fa-save mr-2"></i>Salvar
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <!-- Financing List -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Lista de Financiamentos</h2>
+                    <div class="flex gap-2">
+                        <button id="exportFinancingBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
+                        </button>
+                        <button id="clearDataBtn" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md">
+                            <i class="fas fa-trash-alt mr-2"></i>Limpar Dados
+                        </button>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-financial">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Data</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Cliente</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">CPF</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Valor (R$)</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Consultor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="financingList" class="bg-white divide-y divide-gray-200">
+                            <!-- Financing items will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td colspan="3" class="px-6 py-4 text-right font-bold">Total:</td>
+                                <td id="totalFinancingValue" class="px-6 py-4 font-bold">R$ 0,00</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Consultants Tab -->
+        <div id="consultants" class="tab-content">
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-gray-800">Relatório de Consultores</h2>
+                    <button id="exportConsultantsBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                        <i class="fas fa-file-pdf mr-2"></i>Exportar PDF
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-financial">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Consultor</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Quantidade</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">Total (R$)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="consultantsList" class="bg-white divide-y divide-gray-200">
+                            <!-- Consultant items will be added here dynamically -->
+                        </tbody>
+                        <tfoot>
+                            <tr class="total-row">
+                                <td class="px-6 py-4 text-right font-bold">Total Geral:</td>
+                                <td id="totalConsultantsCount" class="px-6 py-4 font-bold">0</td>
+                                <td id="totalConsultantsValue" class="px-6 py-4 font-bold">R$ 0,00</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Financing Modal -->
+    <div id="editModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold text-gray-800">Editar Financiamento</h3>
+                <button id="closeModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="editForm" class="space-y-4">
+                <input type="hidden" id="editId">
+                <div>
+                    <label for="editDate" class="block text-sm font-medium text-gray-700 mb-1">Data</label>
+                    <input type="date" id="editDate" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="editConsultant" class="block text-sm font-medium text-gray-700 mb-1">Consultor</label>
+                    <input type="text" id="editConsultant" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="editClientName" class="block text-sm font-medium text-gray-700 mb-1">Nome do Cliente</label>
+                    <input type="text" id="editClientName" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div>
+                    <label for="editCpf" class="block text-sm font-medium text-gray-700 mb-1">CPF</label>
+                    <input type="text" id="editCpf" class="w-full p-2 border border-gray-300 rounded-md" placeholder="000.000.000-00">
+                </div>
+                <div>
+                    <label for="editValue" class="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+                    <input type="number" id="editValue" step="0.01" min="0" class="w-full p-2 border border-gray-300 rounded-md">
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" id="cancelEditBtn" class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md">
+                        Salvar Alterações
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Financing data storage
+        let financings = JSON.parse(localStorage.getItem('financings')) || [];
+        
+        // DOM Elements
+        const financingForm = document.getElementById('financingForm');
+        const financingList = document.getElementById('financingList');
+        const consultantsList = document.getElementById('consultantsList');
+        const filterBtn = document.getElementById('filterBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const clearDataBtn = document.getElementById('clearDataBtn');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const exportFinancingBtn = document.getElementById('exportFinancingBtn');
+        const exportConsultantsBtn = document.getElementById('exportConsultantsBtn');
+        const editModal = document.getElementById('editModal');
+        const editForm = document.getElementById('editForm');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const cancelEditBtn = document.getElementById('cancelEditBtn');
+        const tabButtons = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        const totalFinancingValue = document.getElementById('totalFinancingValue');
+        const totalConsultantsCount = document.getElementById('totalConsultantsCount');
+        const totalConsultantsValue = document.getElementById('totalConsultantsValue');
+        
+        // Set default dates
+        const today = new Date();
+        const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+        const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        
+        startDateInput.valueAsDate = firstDayOfMonth;
+        endDateInput.valueAsDate = lastDayOfMonth;
+        
+        // Format date to DD/MM/YYYY
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const [year, month, day] = dateStr.split('-');
+            return `${day}/${month}/${year}`;
+        }
+        
+        // Format CPF
+        function formatCPF(cpf) {
+            if (!cpf) return '';
+            cpf = cpf.replace(/\D/g, '');
+            return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+        }
+        
+        // Validate CPF
+        function validateCPF(cpf) {
+            cpf = cpf.replace(/\D/g, '');
+            
+            if (cpf.length !== 11) return false;
+            
+            // Check for known invalid CPFs
+            if (/^(\d)\1{10}$/.test(cpf)) return false;
+            
+            // Validate first digit
+            let sum = 0;
+            for (let i = 0; i < 9; i++) {
+                sum += parseInt(cpf.charAt(i)) * (10 - i);
+            }
+            let remainder = (sum * 10) % 11;
+            if (remainder === 10) remainder = 0;
+            if (remainder !== parseInt(cpf.charAt(9))) return false;
+            
+            // Validate second digit
+            sum = 0;
+            for (let i = 0; i < 10; i++) {
+                sum += parseInt(cpf.charAt(i)) * (11 - i);
+            }
+            remainder = (sum * 10) % 11;
+            if (remainder === 10) remainder = 0;
+            if (remainder !== parseInt(cpf.charAt(10))) return false;
+            
+            return true;
+        }
+        
+        // Format currency
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', { 
+                style: 'currency', 
+                currency: 'BRL' 
+            }).format(value);
+        }
+        
+        // Calculate total for financings
+        function calculateFinancingTotal(filteredFinancings = financings) {
+            return filteredFinancings.reduce((total, financing) => {
+                return total + parseFloat(financing.value || 0);
+            }, 0);
+        }
+        
+        // Update financing total display
+        function updateFinancingTotal(filteredFinancings = financings) {
+            const total = calculateFinancingTotal(filteredFinancings);
+            totalFinancingValue.textContent = formatCurrency(total);
+        }
+        
+        // Update consultants total display
+        function updateConsultantsTotal() {
+            const consultantsMap = {};
+            
+            financings.forEach(financing => {
+                if (!consultantsMap[financing.consultant]) {
+                    consultantsMap[financing.consultant] = {
+                        count: 0,
+                        total: 0
+                    };
+                }
+                
+                consultantsMap[financing.consultant].count++;
+                consultantsMap[financing.consultant].total += parseFloat(financing.value);
+            });
+            
+            const consultants = Object.keys(consultantsMap).map(consultant => ({
+                name: consultant,
+                count: consultantsMap[consultant].count,
+                total: consultantsMap[consultant].total
+            }));
+            
+            const totalCount = consultants.reduce((sum, consultant) => sum + consultant.count, 0);
+            const totalValue = consultants.reduce((sum, consultant) => sum + consultant.total, 0);
+            
+            totalConsultantsCount.textContent = totalCount;
+            totalConsultantsValue.textContent = formatCurrency(totalValue);
+        }
+        
+        // Render financing list
+        function renderFinancingList(filteredFinancings = financings) {
+            financingList.innerHTML = '';
+            
+            if (filteredFinancings.length === 0) {
+                financingList.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                            Nenhum financiamento encontrado
+                        </td>
+                    </tr>
+                `;
+                updateFinancingTotal([]);
+                return;
+            }
+            
+            filteredFinancings.forEach((financing, index) => {
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatDate(financing.date)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${financing.clientName}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCPF(financing.cpf)}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(parseFloat(financing.value))}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${financing.consultant}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <button class="edit-btn text-blue-600 hover:text-blue-800 mr-3" data-id="${financing.id}">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="delete-btn text-red-600 hover:text-red-800" data-id="${financing.id}">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                financingList.appendChild(tr);
+            });
+            
+            // Update total
+            updateFinancingTotal(filteredFinancings);
+            
+            // Add event listeners to edit and delete buttons
+            document.querySelectorAll('.edit-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    openEditModal(id);
+                });
+            });
+            
+            document.querySelectorAll('.delete-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const id = e.currentTarget.getAttribute('data-id');
+                    deleteFinancing(id);
+                });
+            });
+            
+            // Update consultants list
+            renderConsultantsList();
+        }
+        
+        // Render consultants list
+        function renderConsultantsList() {
+            consultantsList.innerHTML = '';
+            
+            // Group financings by consultant
+            const consultantsMap = {};
+            
+            financings.forEach(financing => {
+                if (!consultantsMap[financing.consultant]) {
+                    consultantsMap[financing.consultant] = {
+                        count: 0,
+                        total: 0
+                    };
+                }
+                
+                consultantsMap[financing.consultant].count++;
+                consultantsMap[financing.consultant].total += parseFloat(financing.value);
+            });
+            
+            const consultants = Object.keys(consultantsMap).map(consultant => ({
+                name: consultant,
+                count: consultantsMap[consultant].count,
+                total: consultantsMap[consultant].total
+            }));
+            
+            if (consultants.length === 0) {
+                consultantsList.innerHTML = `
+                    <tr>
+                        <td colspan="3" class="px-6 py-4 text-center text-gray-500">
+                            Nenhum consultor encontrado
+                        </td>
+                    </tr>
+                `;
+                updateConsultantsTotal();
+                return;
+            }
+            
+            consultants.forEach((consultant, index) => {
+                const tr = document.createElement('tr');
+                tr.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${consultant.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${consultant.count}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${formatCurrency(consultant.total)}</td>
+                `;
+                consultantsList.appendChild(tr);
+            });
+            
+            // Update consultants total
+            updateConsultantsTotal();
+        }
+        
+        // Add new financing
+        financingForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            // Reset error states
+            document.querySelectorAll('.input-error').forEach(el => {
+                el.classList.remove('input-error');
+            });
+            document.querySelectorAll('.error-message').forEach(el => {
+                el.textContent = '';
+            });
+            
+            // Get form values
+            const date = document.getElementById('date').value;
+            const consultant = document.getElementById('consultant').value.trim();
+            const clientName = document.getElementById('clientName').value.trim();
+            const cpf = document.getElementById('cpf').value.replace(/\D/g, '');
+            const value = document.getElementById('value').value;
+            
+            // Validate form
+            let isValid = true;
+            
+            if (!date) {
+                document.getElementById('date').classList.add('input-error');
+                document.getElementById('date-error').textContent = 'Data é obrigatória';
+                isValid = false;
+            }
+            
+            if (!consultant) {
+                document.getElementById('consultant').classList.add('input-error');
+                document.getElementById('consultant-error').textContent = 'Consultor é obrigatório';
+                isValid = false;
+            }
+            
+            if (!clientName) {
+                document.getElementById('clientName').classList.add('input-error');
+                document.getElementById('clientName-error').textContent = 'Nome do cliente é obrigatório';
+                isValid = false;
+            }
+            
+            if (!cpf) {
+                document.getElementById('cpf').classList.add('input-error');
+                document.getElementById('cpf-error').textContent = 'CPF é obrigatório';
+                isValid = false;
+            } else if (!validateCPF(cpf)) {
+                document.getElementById('cpf').classList.add('input-error');
+                document.getElementById('cpf-error').textContent = 'CPF inválido';
+                isValid = false;
+            }
+            
+            if (!value || parseFloat(value) <= 0) {
+                document.getElementById('value').classList.add('input-error');
+                document.getElementById('value-error').textContent = 'Valor deve ser maior que zero';
+                isValid = false;
+            }
+            
+            if (!isValid) return;
+            
+            // Create new financing
+            const newFinancing = {
+                id: Date.now().toString(),
+                date,
+                consultant,
+                clientName,
+                cpf,
+                value: parseFloat(value).toFixed(2)
+            };
+            
+            // Add to array and save to localStorage
+            financings.push(newFinancing);
+            localStorage.setItem('financings', JSON.stringify(financings));
+            
+            // Reset form
+            financingForm.reset();
+            
+            // Render updated list
+            renderFinancingList();
+            
+            // Show success message
+            alert('Financiamento cadastrado com sucesso!');
+        });
+        
+        // Filter financings by date range
+        filterBtn.addEventListener('click', () => {
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+            
+            if (!startDate || !endDate) {
+                alert('Por favor, selecione ambas as datas');
+                return;
+            }
+            
+            if (startDate > endDate) {
+                alert('Data inicial não pode ser maior que data final');
+                return;
+            }
+            
+            const filteredFinancings = financings.filter(financing => {
+                return financing.date >= startDate && financing.date <= endDate;
+            });
+            
+            renderFinancingList(filteredFinancings);
+        });
+        
+        // Clear filter
+        clearBtn.addEventListener('click', () => {
+            startDateInput.valueAsDate = firstDayOfMonth;
+            endDateInput.valueAsDate = lastDayOfMonth;
+            renderFinancingList();
+        });
+        
+        // Clear all data
+        clearDataBtn.addEventListener('click', () => {
+            if (confirm('Tem certeza que deseja limpar TODOS os dados? Esta ação não pode ser desfeita.')) {
+                financings = [];
+                localStorage.removeItem('financings');
+                renderFinancingList();
+                renderConsultantsList();
+                alert('Todos os dados foram removidos com sucesso!');
+            }
+        });
+        
+        // Open edit modal
+        function openEditModal(id) {
+            const financing = financings.find(f => f.id === id);
+            if (!financing) return;
+            
+            document.getElementById('editId').value = financing.id;
+            document.getElementById('editDate').value = financing.date;
+            document.getElementById('editConsultant').value = financing.consultant;
+            document.getElementById('editClientName').value = financing.clientName;
+            document.getElementById('editCpf').value = financing.cpf;
+            document.getElementById('editValue').value = financing.value;
+            
+            editModal.classList.remove('hidden');
+        }
+        
+        // Close edit modal
+        function closeEditModal() {
+            editModal.classList.add('hidden');
+        }
+        
+        // Edit financing
+        editForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            
+            const id = document.getElementById('editId').value;
+            const date = document.getElementById('editDate').value;
+            const consultant = document.getElementById('editConsultant').value.trim();
+            const clientName = document.getElementById('editClientName').value.trim();
+            const cpf = document.getElementById('editCpf').value.replace(/\D/g, '');
+            const value = document.getElementById('editValue').value;
+            
+            // Validate form
+            if (!date || !consultant || !clientName || !cpf || !value || parseFloat(value) <= 0) {
+                alert('Por favor, preencha todos os campos corretamente');
+                return;
+            }
+            
+            if (!validateCPF(cpf)) {
+                alert('CPF inválido');
+                return;
+            }
+            
+            // Update financing
+            const index = financings.findIndex(f => f.id === id);
+            if (index !== -1) {
+                financings[index] = {
+                    ...financings[index],
+                    date,
+                    consultant,
+                    clientName,
+                    cpf,
+                    value: parseFloat(value).toFixed(2)
+                };
+                
+                // Save to localStorage
+                localStorage.setItem('financings', JSON.stringify(financings));
+                
+                // Render updated list
+                renderFinancingList();
+                
+                // Close modal
+                closeEditModal();
+                
+                // Show success message
+                alert('Financiamento atualizado com sucesso!');
+            }
+        });
+        
+        // Delete financing
+        function deleteFinancing(id) {
+            if (confirm('Tem certeza que deseja excluir este financiamento?')) {
+                financings = financings.filter(f => f.id !== id);
+                localStorage.setItem('financings', JSON.stringify(financings));
+                renderFinancingList();
+                alert('Financiamento excluído com sucesso!');
+            }
+        }
+        
+        // Export financing report to PDF - VERSÃO CORRIGIDA
+        exportFinancingBtn.addEventListener('click', () => {
+            try {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                
+                let filteredFinancings = financings;
+                
+                if (startDate && endDate) {
+                    filteredFinancings = financings.filter(financing => {
+                        return financing.date >= startDate && financing.date <= endDate;
+                    });
+                }
+                
+                if (filteredFinancings.length === 0) {
+                    alert('Nenhum financiamento encontrado para exportar');
+                    return;
+                }
+                
+                // Verifica se a biblioteca jsPDF está carregada corretamente
+                if (typeof window.jspdf !== 'undefined') {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('p', 'pt');
+                    
+                    // Title
+                    doc.setFontSize(18);
+                    doc.text('Relatório de Financiamentos', 40, 40);
+                    
+                    // Date range
+                    doc.setFontSize(12);
+                    doc.text(`Período: ${formatDate(startDate) || 'Todos'} até ${formatDate(endDate) || 'Todos'}`, 40, 60);
+                    
+                    // Table data
+                    const tableData = filteredFinancings.map(financing => [
+                        formatDate(financing.date),
+                        financing.clientName,
+                        formatCPF(financing.cpf),
+                        formatCurrency(parseFloat(financing.value)),
+                        //financing.consultant
+                    ]);
+                    
+                    // Calculate total
+                    const total = calculateFinancingTotal(filteredFinancings);
+                    
+					// Add total row (AGORA COM 4 COLUNAS)
+					tableData.push([
+						'',
+						'',
+						'Total:',
+						formatCurrency(total)
+						// REMOVIDO: , ''
+					]);
+                    
+                    // Table headers
+                    const headers = [
+                        'Data',
+                        'Cliente',
+                        'CPF',
+                        'Valor (R$)',
+                        //'Consultor'
+                    ];
+                    
+                    // Add table
+                    doc.autoTable({
+                        head: [headers],
+                        body: tableData,
+                        startY: 80,
+                        margin: { top: 60 },
+                        styles: {
+                            fontSize: 9,
+                            cellPadding: 3,
+                            overflow: 'linebreak',
+                            valign: 'middle'
+                        },
+                        headStyles: {
+                            fillColor: [41, 128, 185],
+                            textColor: 255,
+                            fontStyle: 'bold'
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 60 },
+                            1: { cellWidth: 250 },
+                            2: { cellWidth: 80 },
+                            3: { cellWidth: 70 },
+                            //4: { cellWidth: 100 }
+                        },
+                        didDrawPage: function (data) {
+                            // Footer
+                            doc.setFontSize(10);
+                            doc.setTextColor(100);
+                            doc.text('Fabíola Albuquerque Pereira - Consultora', data.settings.margin.left, doc.internal.pageSize.height - 20);
+                        }
+                    });
+                    
+                    // Save PDF
+                    doc.save(`relatorio_financiamentos_${new Date().toISOString().slice(0, 10)}.pdf`);
+                } else {
+                    alert('Erro: Biblioteca de PDF não carregada corretamente. Por favor, recarregue a página.');
+                }
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+            }
+        });
+
+        // Export consultants report to PDF - VERSÃO CORRIGIDA
+        exportConsultantsBtn.addEventListener('click', () => {
+            try {
+                const startDate = startDateInput.value;
+                const endDate = endDateInput.value;
+                
+                // Group financings by consultant
+                const consultantsMap = {};
+                
+                let filteredFinancings = financings;
+                
+                if (startDate && endDate) {
+                    filteredFinancings = financings.filter(financing => {
+                        return financing.date >= startDate && financing.date <= endDate;
+                    });
+                }
+                
+                filteredFinancings.forEach(financing => {
+                    if (!consultantsMap[financing.consultant]) {
+                        consultantsMap[financing.consultant] = {
+                            count: 0,
+                            total: 0
+                        };
+                    }
+                    
+                    consultantsMap[financing.consultant].count++;
+                    consultantsMap[financing.consultant].total += parseFloat(financing.value);
+                });
+                
+                const consultants = Object.keys(consultantsMap).map(consultant => ({
+                    name: consultant,
+                    count: consultantsMap[consultant].count,
+                    total: consultantsMap[consultant].total
+                }));
+                
+                if (consultants.length === 0) {
+                    alert('Nenhum consultor encontrado para exportar');
+                    return;
+                }
+                
+                // Verifica se a biblioteca jsPDF está carregada corretamente
+                if (typeof window.jspdf !== 'undefined') {
+                    const { jsPDF } = window.jspdf;
+                    const doc = new jsPDF('p', 'pt');
+                    
+                    // Title
+                    doc.setFontSize(18);
+                    doc.text('Relatório de Consultores', 40, 40);
+                    
+                    // Date range
+                    doc.setFontSize(12);
+                    doc.text(`Período: ${formatDate(startDate) || 'Todos'} até ${formatDate(endDate) || 'Todos'}`, 40, 60);
+                    
+                    // Table data
+                    const tableData = consultants.map(consultant => [
+                        consultant.name,
+                        consultant.count,
+                        formatCurrency(consultant.total)
+                    ]);
+                    
+                    // Calculate totals
+                    const totalCount = consultants.reduce((sum, consultant) => sum + consultant.count, 0);
+                    const totalValue = consultants.reduce((sum, consultant) => sum + consultant.total, 0);
+                    
+                    // Add total row
+                    tableData.push([
+                        'Total Geral:',
+                        totalCount,
+                        formatCurrency(totalValue)
+                    ]);
+                    
+                    // Table headers
+                    const headers = [
+                        'Consultor',
+                        'Quantidade',
+                        'Total (R$)'
+                    ];
+                    
+                    // Add table
+                    doc.autoTable({
+                        head: [headers],
+                        body: tableData,
+                        startY: 80,
+                        margin: { top: 60 },
+                        styles: {
+                            fontSize: 10,
+                            cellPadding: 3,
+                            valign: 'middle'
+                        },
+                        headStyles: {
+                            fillColor: [41, 128, 185],
+                            textColor: 255,
+                            fontStyle: 'bold'
+                        },
+                        columnStyles: {
+                            0: { cellWidth: 250 },
+                            1: { cellWidth: 60 },
+                            2: { cellWidth: 80 }
+                        },
+                        didDrawPage: function (data) {
+                            // Footer
+                            doc.setFontSize(10);
+                            doc.setTextColor(100);
+                            doc.text('Fabíola Albuquerque Pereira - Consultora', data.settings.margin.left, doc.internal.pageSize.height - 20);
+                        }
+                    });
+                    
+                    // Save PDF
+                    doc.save(`relatorio_consultores_${new Date().toISOString().slice(0, 10)}.pdf`);
+                } else {
+                    alert('Erro: Biblioteca de PDF não carregada corretamente. Por favor, recarregue a página.');
+                }
+            } catch (error) {
+                console.error('Erro ao gerar PDF:', error);
+                alert('Ocorreu um erro ao gerar o PDF. Por favor, tente novamente.');
+            }
+        });
+
+        // Tab switching
+        tabButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                const tabId = button.getAttribute('data-tab');
+                
+                // Update active tab button
+                tabButtons.forEach(btn => {
+                    btn.classList.remove('active');
+                    btn.classList.remove('border-blue-600');
+                    btn.classList.add('border-transparent');
+                });
+                button.classList.add('active');
+                button.classList.add('border-blue-600');
+                button.classList.remove('border-transparent');
+                
+                // Update active tab content
+                tabContents.forEach(content => {
+                    content.classList.remove('active');
+                });
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+        
+        // Close modal buttons
+        closeModalBtn.addEventListener('click', closeEditModal);
+        cancelEditBtn.addEventListener('click', closeEditModal);
+        
+        // CPF mask
+        document.getElementById('cpf').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length > 3) {
+                value = value.replace(/^(\d{3})/, '$1.');
+            }
+            if (value.length > 7) {
+                value = value.replace(/^(\d{3})\.(\d{3})/, '$1.$2.');
+            }
+            if (value.length > 11) {
+                value = value.replace(/^(\d{3})\.(\d{3})\.(\d{3})/, '$1.$2.$3-');
+            }
+            
+            e.target.value = value.substring(0, 14);
+        });
+        
+        // Initialize the app
+        renderFinancingList();
+    </script>
+</body>
+</html>
