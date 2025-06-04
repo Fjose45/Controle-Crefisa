@@ -83,7 +83,7 @@
 <body class="min-h-screen">
     <div class="container mx-auto px-4 py-8">
         <h1 class="text-3xl font-bold text-center text-blue-800 mb-8">Sistema de Financiamentos</h1>
-        
+
         <div class="bg-financial-light rounded-lg shadow-md p-6 mb-8">
             <h2 class="text-xl font-semibold mb-4 text-white">Filtrar por Período</h2>
             <div class="flex mobile-stack gap-4">
@@ -105,7 +105,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div class="mb-6">
             <div class="flex border-b border-gray-200">
                 <button class="tab-btn py-2 px-4 font-medium text-gray-600 hover:text-blue-600 border-b-2 border-transparent hover:border-blue-600 active" data-tab="financing">
@@ -116,7 +116,7 @@
                 </button>
             </div>
         </div>
-        
+
         <div id="financing" class="tab-content active">
             <div class="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h2 class="text-xl font-semibold mb-4 text-gray-800">Cadastrar Novo Financiamento</h2>
@@ -158,7 +158,7 @@
                     </div>
                 </form>
             </div>
-            
+
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold text-gray-800">Lista de Financiamentos</h2>
@@ -200,7 +200,7 @@
                 </div>
             </div>
         </div>
-        
+
         <div id="consultants" class="tab-content">
             <div class="bg-white rounded-lg shadow-md p-6">
                 <div class="flex justify-between items-center mb-4">
@@ -288,7 +288,7 @@
     <script>
         // Financing data storage
         let financings = JSON.parse(localStorage.getItem('financings')) || [];
-        
+
         // DOM Elements
         const financingForm = document.getElementById('financingForm');
         const financingList = document.getElementById('financingList');
@@ -306,7 +306,7 @@
         const cancelEditBtn = document.getElementById('cancelEditBtn');
         const tabButtons = document.querySelectorAll('.tab-btn');
         const tabContents = document.querySelectorAll('.tab-content');
-        
+
         // Totals in Table
         const totalFinancingValueInTable = document.getElementById('totalFinancingValueInTable');
         const totalConsultantsCountInTable = document.getElementById('totalConsultantsCountInTable');
@@ -321,22 +321,22 @@
         const today = new Date();
         const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
         const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-        
+
         startDateInput.valueAsDate = firstDayOfMonth;
         endDateInput.valueAsDate = lastDayOfMonth;
-        
+
         function formatDate(dateStr) {
             if (!dateStr) return '';
             const [year, month, day] = dateStr.split('-');
             return `${day}/${month}/${year}`;
         }
-        
+
         function formatCPF(cpf) {
             if (!cpf) return '';
             cpf = cpf.replace(/\D/g, '');
             return cpf.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
         }
-        
+
         function validateCPF(cpf) {
             cpf = cpf.replace(/\D/g, '');
             if (cpf.length !== 11 || /^(\d)\1{10}$/.test(cpf)) return false;
@@ -351,22 +351,22 @@
             if (remainder === 10) remainder = 0;
             return remainder === parseInt(cpf.charAt(10));
         }
-        
+
         function formatCurrency(value) {
             return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
         }
-        
+
         function calculateFinancingTotal(filteredFinancings = financings) {
             return filteredFinancings.reduce((total, financing) => total + parseFloat(financing.value || 0), 0);
         }
-        
+
         function updateFinancingTotal(filteredFinancings = financings) {
             const total = calculateFinancingTotal(filteredFinancings);
             const formattedTotal = formatCurrency(total);
             totalFinancingValueInTable.textContent = formattedTotal;
             totalFinancingValueSeparate.textContent = formattedTotal;
         }
-        
+
         function updateConsultantsTotal() {
             const consultantsMap = {};
             financings.forEach(financing => {
@@ -376,17 +376,17 @@
                 consultantsMap[financing.consultant].count++;
                 consultantsMap[financing.consultant].total += parseFloat(financing.value);
             });
-            
+
             const consultants = Object.values(consultantsMap); // Simplified
             const totalCount = consultants.reduce((sum, c) => sum + c.count, 0);
             const totalValue = consultants.reduce((sum, c) => sum + c.total, 0);
-            
+
             totalConsultantsCountInTable.textContent = totalCount;
             totalConsultantsValueInTable.textContent = formatCurrency(totalValue);
             totalConsultantsCountSeparate.textContent = totalCount;
             totalConsultantsValueSeparate.textContent = formatCurrency(totalValue);
         }
-        
+
         function renderFinancingList(filteredFinancings = financings) {
             financingList.innerHTML = '';
             if (filteredFinancings.length === 0) {
@@ -395,7 +395,7 @@
                 renderConsultantsList(); // Ensure consultant list is also updated
                 return;
             }
-            
+
             filteredFinancings.forEach((financing, index) => {
                 const tr = document.createElement('tr');
                 tr.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
@@ -411,15 +411,15 @@
                     </td>`;
                 financingList.appendChild(tr);
             });
-            
+
             updateFinancingTotal(filteredFinancings);
-            
+
             document.querySelectorAll('.edit-btn').forEach(btn => btn.addEventListener('click', (e) => openEditModal(e.currentTarget.getAttribute('data-id'))));
             document.querySelectorAll('.delete-btn').forEach(btn => btn.addEventListener('click', (e) => deleteFinancing(e.currentTarget.getAttribute('data-id'))));
-            
+
             renderConsultantsList();
         }
-        
+
         function renderConsultantsList() {
             consultantsList.innerHTML = '';
             const consultantsMap = {};
@@ -430,15 +430,15 @@
                 consultantsMap[financing.consultant].count++;
                 consultantsMap[financing.consultant].total += parseFloat(financing.value);
             });
-            
+
             const consultantsData = Object.entries(consultantsMap).map(([name, data]) => ({ name, ...data }));
-            
+
             if (consultantsData.length === 0) {
                 consultantsList.innerHTML = `<tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">Nenhum consultor encontrado</td></tr>`;
                 updateConsultantsTotal(); // Update with empty data
                 return;
             }
-            
+
             consultantsData.forEach((consultant, index) => {
                 const tr = document.createElement('tr');
                 tr.className = index % 2 === 0 ? 'bg-gray-50' : 'bg-white';
@@ -450,12 +450,12 @@
             });
             updateConsultantsTotal();
         }
-        
+
         financingForm.addEventListener('submit', (e) => {
             e.preventDefault();
             document.querySelectorAll('.input-error').forEach(el => el.classList.remove('input-error'));
             document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
-            
+
             const date = document.getElementById('date').value;
             const consultant = document.getElementById('consultant').value.trim();
             const clientName = document.getElementById('clientName').value.trim();
@@ -469,16 +469,16 @@
             if (!cpf) { document.getElementById('cpf').classList.add('input-error'); document.getElementById('cpf-error').textContent = 'CPF é obrigatório'; isValid = false; }
             else if (!validateCPF(cpf)) { document.getElementById('cpf').classList.add('input-error'); document.getElementById('cpf-error').textContent = 'CPF inválido'; isValid = false; }
             if (!value || parseFloat(value) <= 0) { document.getElementById('value').classList.add('input-error'); document.getElementById('value-error').textContent = 'Valor deve ser maior que zero'; isValid = false; }
-            
+
             if (!isValid) return;
-            
+
             financings.push({ id: Date.now().toString(), date, consultant, clientName, cpf, value: parseFloat(value).toFixed(2) });
             localStorage.setItem('financings', JSON.stringify(financings));
             financingForm.reset();
             renderFinancingList();
             alert('Financiamento cadastrado com sucesso!');
         });
-        
+
         filterBtn.addEventListener('click', () => {
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
@@ -486,13 +486,13 @@
             if (startDate > endDate) { alert('Data inicial não pode ser maior que data final'); return; }
             renderFinancingList(financings.filter(f => f.date >= startDate && f.date <= endDate));
         });
-        
+
         clearBtn.addEventListener('click', () => {
             startDateInput.valueAsDate = firstDayOfMonth;
             endDateInput.valueAsDate = lastDayOfMonth;
             renderFinancingList();
         });
-        
+
         clearDataBtn.addEventListener('click', () => {
             if (confirm('Tem certeza que deseja limpar TODOS os dados? Esta ação não pode ser desfeita.')) {
                 financings = [];
@@ -501,7 +501,7 @@
                 alert('Todos os dados foram removidos com sucesso!');
             }
         });
-        
+
         function openEditModal(id) {
             const financing = financings.find(f => f.id === id);
             if (!financing) return;
@@ -513,11 +513,11 @@
             document.getElementById('editValue').value = financing.value;
             editModal.classList.remove('hidden');
         }
-        
+
         function closeEditModal() {
             editModal.classList.add('hidden');
         }
-        
+
         editForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const id = document.getElementById('editId').value;
@@ -529,7 +529,7 @@
 
             if (!date || !consultant || !clientName || !cpf || !value || parseFloat(value) <= 0) { alert('Por favor, preencha todos os campos corretamente'); return; }
             if (!validateCPF(cpf)) { alert('CPF inválido'); return; }
-            
+
             const index = financings.findIndex(f => f.id === id);
             if (index !== -1) {
                 financings[index] = { ...financings[index], date, consultant, clientName, cpf, value: parseFloat(value).toFixed(2) };
@@ -539,7 +539,7 @@
                 alert('Financiamento atualizado com sucesso!');
             }
         });
-        
+
         function deleteFinancing(id) {
             if (confirm('Tem certeza que deseja excluir este financiamento?')) {
                 financings = financings.filter(f => f.id !== id);
@@ -548,7 +548,7 @@
                 alert('Financiamento excluído com sucesso!');
             }
         }
-        
+
         exportFinancingBtn.addEventListener('click', () => {
             try {
                 const startDate = startDateInput.value;
@@ -558,32 +558,31 @@
                     filteredFinancings = financings.filter(f => f.date >= startDate && f.date <= endDate);
                 }
                 if (filteredFinancings.length === 0) { alert('Nenhum financiamento encontrado para exportar'); return; }
-                
+
                 if (typeof window.jspdf !== 'undefined') {
                     const { jsPDF } = window.jspdf;
                     const doc = new jsPDF('p', 'pt');
-                    
+
                     doc.setFontSize(18);
                     doc.text('Relatório de Financiamentos', 40, 40);
                     doc.setFontSize(12);
                     doc.text(`Período: ${formatDate(startDate) || 'Todos'} até ${formatDate(endDate) || 'Todos'}`, 40, 60);
-                    
+
                     const tableData = filteredFinancings.map(f => [
-                        formatDate(f.date), f.clientName, formatCPF(f.cpf), formatCurrency(parseFloat(f.value)), f.consultant
+                        formatDate(f.date), f.clientName, formatCPF(f.cpf), formatCurrency(parseFloat(f.value))
                     ]);
                     const totalFinancingAmount = calculateFinancingTotal(filteredFinancings);
-                    
+
                     // Total row IN TABLE (normal font size)
                     tableData.push([
                         { content: '', styles: { cellWidth: 'auto'} },
                         { content: '', styles: { cellWidth: 'auto'} },
                         { content: 'Total na Tabela:', styles: { halign: 'right', fontStyle: 'bold', textColor: [30, 64, 175]} },
-                        { content: formatCurrency(totalFinancingAmount), styles: { halign: 'left', fontStyle: 'bold', textColor: [30, 64, 175]} },
-                        { content: '', styles: { cellWidth: 'auto'} }
+                        { content: formatCurrency(totalFinancingAmount), styles: { halign: 'left', fontStyle: 'bold', textColor: [30, 64, 175]} }
                     ]);
-                                        
-                    const headers = ['Data', 'Cliente', 'CPF', 'Valor (R$)', 'Consultor'];
-                    
+
+                    const headers = ['Data', 'Cliente', 'CPF', 'Valor (R$)'];
+
                     doc.autoTable({
                         head: [headers],
                         body: tableData,
@@ -592,7 +591,10 @@
                         styles: { fontSize: 9, cellPadding: 3, overflow: 'linebreak', valign: 'middle' },
                         headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
                         columnStyles: {
-                            0: { cellWidth: 60 }, 1: { cellWidth: 150 }, 2: { cellWidth: 80 }, 3: { cellWidth: 70 }, 4: { cellWidth: 100 }
+                            0: { cellWidth: 80 },
+                            1: { cellWidth: 250 },
+                            2: { cellWidth: 80 },
+                            3: { cellWidth: 100 }
                         },
                         didDrawPage: function (data) {
                             doc.setFontSize(10); doc.setTextColor(100);
@@ -605,11 +607,11 @@
                     doc.setFontSize(12);
                     doc.setTextColor(30, 64, 175); // Azul escuro
                     doc.setFont(undefined, 'bold'); // Usar 'undefined' para manter a fonte atual (helvetica por padrão no jsPDF)
-                    doc.text('Valor Total dos Financiamentos:', 40, finalY + 30); // Aumentado o espaçamento para 30
+                    doc.text('Valor Total dos Financiamentos:', 40, finalY + 30);
                     doc.setFontSize(14);
-                    doc.text(formatCurrency(totalFinancingAmount), 240, finalY + 30); // Ajustar X se necessário
+                    doc.text(formatCurrency(totalFinancingAmount), 240, finalY + 30);
                     doc.setFont(undefined, 'normal');
-                    
+
                     doc.save(`relatorio_financiamentos_${new Date().toISOString().slice(0, 10)}.pdf`);
                 } else {
                     alert('Erro: Biblioteca de PDF não carregada.');
@@ -679,11 +681,11 @@
                     doc.text(formatCurrency(totalConsultantsValue), 240, finalYConsultants + 30);
 
                     doc.setFontSize(12);
-                    doc.text('Quantidade Total de Vendas:', 40, finalYConsultants + 50); // Espaçamento adicional
+                    doc.text('Quantidade Total de Vendas:', 40, finalYConsultants + 50);
                     doc.setFontSize(14);
                     doc.text(String(totalConsultantsCount), 240, finalYConsultants + 50);
                     doc.setFont(undefined, 'normal');
-                    
+
                     doc.save(`relatorio_consultores_${new Date().toISOString().slice(0, 10)}.pdf`);
                 } else {
                     alert('Erro: Biblioteca de PDF não carregada.');
@@ -703,10 +705,10 @@
                 document.getElementById(tabId).classList.add('active');
             });
         });
-        
+
         closeModalBtn.addEventListener('click', closeEditModal);
         cancelEditBtn.addEventListener('click', closeEditModal);
-        
+
         document.getElementById('cpf').addEventListener('input', function(e) {
             let value = e.target.value.replace(/\D/g, '');
             if (value.length > 3) value = value.replace(/^(\d{3})/, '$1.');
@@ -721,7 +723,7 @@
             if (value.length > 11) value = value.replace(/^(\d{3})\.(\d{3})\.(\d{3})/, '$1.$2.$3-');
             e.target.value = value.substring(0, 14);
         });
-        
+
         renderFinancingList();
     </script>
 </body>
